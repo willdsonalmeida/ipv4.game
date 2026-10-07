@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Address Master - O Jogo de Redes</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#06b6d4',
+                            neon: '#10b981',
+                            pink: '#ec4899',
+                            yellow: '#f59e0b'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Fonts and Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Tone.js for Web Audio Synth Sound FX -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f8fafc;
+            user-select: none;
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.25);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+        }
+        .bit-btn {
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bit-btn.active {
+            background-color: #10b981;
+            color: #0f172a;
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            transform: translateY(-2px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between bg-slate-950 text-slate-100 overflow-x-hidden">
+
+    <!-- Top Header -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-cyan-500/10 border border-cyan-500/30 rounded-lg text-cyan-400">
+                    <i class="fa-solid fa-network-wired text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent">
+                        IP Address Master
+                    </h1>
+                    <p class="text-xs text-slate-400">Aprenda & Domine Protocolos de Rede</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="flex items-center gap-4 text-sm font-mono">
+                <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-trophy text-amber-400"></i>
+                    <span class="text-slate-400 text-xs hidden sm:inline">Pontos:</span>
+                    <span id="score-display" class="font-bold text-amber-400">0</span>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">
+                    <i class="fa-solid fa-bolt text-cyan-400"></i>
+                    <span class="text-slate-400 text-xs hidden sm:inline">Combo:</span>
+                    <span id="streak-display" class="font-bold text-cyan-400">x0</span>
+                </div>
+                <button id="audio-toggle-btn" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition" title="Alternar Áudio">
+                    <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+                </button>
+                <button id="cheat-sheet-btn" class="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-semibold flex items-center gap-2 transition">
+                    <i class="fa-solid fa-book"></i>
+                    <span class="hidden md:inline">Guia de Estudo</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-5xl mx-auto w-full px-4 py-6 flex-1 flex flex-col">
+        
+        <!-- Game Mode Selection Navigation -->
+        <nav class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+            <button onclick="switchMode('classes')" id="nav-btn-classes" class="mode-btn p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800/80 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-layer-group text-cyan-400 text-lg"></i>
+                <span class="text-xs font-semibold">1. Classes de IP</span>
+            </button>
+            <button onclick="switchMode('binary')" id="nav-btn-binary" class="mode-btn p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800/80 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-code text-emerald-400 text-lg"></i>
+                <span class="text-xs font-semibold">2. Conversor Binário</span>
+            </button>
+            <button onclick="switchMode('types')" id="nav-btn-types" class="mode-btn p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800/80 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-shield-halved text-purple-400 text-lg"></i>
+                <span class="text-xs font-semibold">3. Público vs Privado</span>
+            </button>
+            <button onclick="switchMode('subnetting')" id="nav-btn-subnetting" class="mode-btn p-3 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800/80 flex flex-col items-center gap-1 transition">
+                <i class="fa-solid fa-calculator text-amber-400 text-lg"></i>
+                <span class="text-xs font-semibold">4. Máscaras & CIDR</span>
+            </button>
+        </nav>
+
+        <!-- Dynamic Game Card Container -->
+        <div id="game-card" class="glass-panel rounded-2xl p-6 md:p-8 flex-1 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            
+            <!-- Timer & Mode Banner -->
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+                <div>
+                    <span id="mode-badge" class="px-2.5 py-1 text-xs font-bold font-mono rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 uppercase tracking-wider">
+                        Modo Ativo
+                    </span>
+                    <h2 id="mode-title" class="text-xl font-bold mt-1 text-slate-100">Título do Desafio</h2>
+                </div>
+                <div id="timer-box" class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 font-mono">
+                    <i class="fa-regular fa-clock text-rose-400"></i>
+                    <span id="timer-display" class="text-lg font-bold text-rose-400">30s</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Question Content Area -->
+            <div id="question-container" class="flex-1 flex flex-col items-center justify-center my-4 text-center">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Feedback Alert Bar -->
+            <div id="feedback-bar" class="hidden my-4 p-3 rounded-xl text-sm font-semibold text-center transition-all">
+                <!-- Injected via JS -->
+            </div>
+
+            <!-- Controls & Action Button Area -->
+            <div id="action-container" class="mt-4 pt-4 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p id="helper-tip" class="text-xs text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-amber-400"></i>
+                    <span id="tip-text">Selecione a resposta correta antes que o tempo acabe!</span>
+                </p>
+                <button id="next-btn" onclick="generateQuestion()" class="w-full sm:w-auto px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                    <span>Próxima Pergunta</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Cheat Sheet Modal -->
+    <div id="cheat-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-900 sticky top-0">
+                <div class="flex items-center gap-2 text-cyan-400 font-bold text-lg">
+                    <i class="fa-solid fa-graduation-cap"></i>
+                    <span>Guia de Referência Rápida sobre IP</span>
+                </div>
+                <button id="close-cheat-btn" class="p-2 text-slate-400 hover:text-white rounded-lg transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+                
+                <!-- Table Classes -->
+                <div>
+                    <h3 class="text-cyan-400 font-bold mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-table-list"></i> Classes de Endereços IPv4 (Classful)
+                    </h3>
+                    <div class="overflow-x-auto rounded-lg border border-slate-800">
+                        <table class="w-full text-left font-mono text-xs">
+                            <thead class="bg-slate-800 text-slate-200">
+                                <tr>
+                                    <th class="p-2.5">Classe</th>
+                                    <th class="p-2.5">Primeiro Octeto</th>
+                                    <th class="p-2.5">Máscara Padrão</th>
+                                    <th class="p-2.5">Uso Principal</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                <tr><td class="p-2 text-emerald-400 font-bold">Classe A</td><td class="p-2">1 - 126</td><td class="p-2">255.0.0.0 (/8)</td><td class="p-2">Redes muito grandes</td></tr>
+                                <tr><td class="p-2 text-cyan-400 font-bold">Classe B</td><td class="p-2">128 - 191</td><td class="p-2">255.255.0.0 (/16)</td><td class="p-2">Redes médias</td></tr>
+                                <tr><td class="p-2 text-amber-400 font-bold">Classe C</td><td class="p-2">192 - 223</td><td class="p-2">255.255.255.0 (/24)</td><td class="p-2">Redes locais (LANs)</td></tr>
+                                <tr><td class="p-2 text-purple-400 font-bold">Classe D</td><td class="p-2">224 - 239</td><td class="p-2">N/A</td><td class="p-2">Multicast</td></tr>
+                                <tr><td class="p-2 text-rose-400 font-bold">Classe E</td><td class="p-2">240 - 254</td><td class="p-2">N/A</td><td class="p-2">Experimental / Pesquisa</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">*Nota: O octeto 127 é reservado para testes de Loopback (ex: 127.0.0.1).*</p>
+                </div>
+
+                <!-- Table Private IPs -->
+                <div>
+                    <h3 class="text-purple-400 font-bold mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-lock"></i> Endereços Privados (RFC 1918)
+                    </h3>
+                    <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono text-xs space-y-1">
+                        <p><span class="text-emerald-400 font-bold">Classe A Privada:</span> 10.0.0.0 até 10.255.255.255 (/8)</p>
+                        <p><span class="text-cyan-400 font-bold">Classe B Privada:</span> 172.16.0.0 até 172.31.255.255 (/12)</p>
+                        <p><span class="text-amber-400 font-bold">Classe C Privada:</span> 192.168.0.0 até 192.168.255.255 (/16)</p>
+                    </div>
+                </div>
+
+                <!-- Binary Table -->
+                <div>
+                    <h3 class="text-emerald-400 font-bold mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-binary"></i> Tabela de Potências de 2 (Valores de Bits em 1 Octeto)
+                    </h3>
+                    <div class="grid grid-cols-8 gap-1 font-mono text-center text-xs">
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2⁷</div><div class="font-bold text-emerald-400">128</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2⁶</div><div class="font-bold text-emerald-400">64</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2⁵</div><div class="font-bold text-emerald-400">32</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2⁴</div><div class="font-bold text-emerald-400">16</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2³</div><div class="font-bold text-emerald-400">8</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2²</div><div class="font-bold text-emerald-400">4</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2¹</div><div class="font-bold text-emerald-400">2</div></div>
+                        <div class="bg-slate-800 p-2 rounded"><div class="text-slate-400">2⁰</div><div class="font-bold text-emerald-400">1</div></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-3 bg-slate-950 text-center text-xs text-slate-500">
+        <p>IP Address Master Game &bull; Desenvolvido para Aprendizado Prático de Redes de Computadores</p>
+    </footer>
+
+    <script>
+        // Game State Variables
+        let currentMode = 'classes';
+        let score = 0;
+        let streak = 0;
+        let timer = 30;
+        let timerInterval = null;
+        let isAudioEnabled = true;
+        let currentQuestionData = null;
+        let isAnswered = false;
+
+        // Tone.js Sound FX Setup
+        let synth = null;
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                synth = new Tone.Synth().toDestination();
+            }
+        }
+
+        function playSound(type) {
+            if (!isAudioEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const now = Tone.now();
+                if (type === 'correct') {
+                    const poly = new Tone.PolySynth().toDestination();
+                    poly.triggerAttackRelease(["C5", "E5", "G5"], "8n");
+                } else if (type === 'wrong') {
+                    synth.triggerAttackRelease("G2", "8n", now);
+                } else if (type === 'click') {
+                    synth.triggerAttackRelease("C4", "16n", now);
+                } else if (type === 'toggle') {
+                    synth.triggerAttackRelease("E4", "32n", now);
+                }
+            } catch (e) {
+                console.log("Audio play error:", e);
+            }
+        }
+
+        // Toggle Audio
+        document.getElementById('audio-toggle-btn').addEventListener('click', () => {
+            isAudioEnabled = !isAudioEnabled;
+            const icon = document.getElementById('audio-icon');
+            if (isAudioEnabled) {
+                icon.className = 'fa-solid fa-volume-high';
+            } else {
+                icon.className = 'fa-solid fa-volume-xmark text-rose-400';
+            }
+        });
+
+        // Cheat Sheet Modal Controls
+        const cheatModal = document.getElementById('cheat-modal');
+        document.getElementById('cheat-sheet-btn').addEventListener('click', () => {
+            playSound('click');
+            cheatModal.classList.remove('hidden');
+        });
+        document.getElementById('close-cheat-btn').addEventListener('click', () => {
+            cheatModal.classList.add('hidden');
+        });
+
+        function switchMode(mode) {
+            playSound('click');
+            currentMode = mode;
+            
+            // Update active button state
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.remove('border-cyan-500', 'bg-slate-800', 'shadow-lg');
+            });
+            const activeNav = document.getElementById(`nav-btn-${mode}`);
+            if (activeNav) {
+                activeNav.classList.add('border-cyan-500', 'bg-slate-800', 'shadow-lg');
+            }
+
+            // Update UI elements based on mode
+            const modeBadge = document.getElementById('mode-badge');
+            const modeTitle = document.getElementById('mode-title');
+
+            switch(mode) {
+                case 'classes':
+                    modeBadge.innerText = 'NÍVEL 1: CLASSES DE IP';
+                    modeTitle.innerText = 'Identifique a Classe do Endereço IP';
+                    break;
+                case 'binary':
+                    modeBadge.innerText = 'NÍVEL 2: CONVERSOR BINÁRIO';
+                    modeTitle.innerText = 'Monte o Octeto Alternando os Bits';
+                    break;
+                case 'types':
+                    modeBadge.innerText = 'NÍVEL 3: PÚBLICO VS PRIVADO';
+                    modeTitle.innerText = 'Classifique o Tipo de Endereço IP';
+                    break;
+                case 'subnetting':
+                    modeBadge.innerText = 'NÍVEL 4: MÁSCARAS E CIDR';
+                    modeTitle.innerText = 'Cálculo de Sub-redes e Notação CIDR';
+                    break;
+            }
+
+            resetTimer();
+            generateQuestion();
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timer = 30;
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timer--;
+                updateTimerDisplay();
+                if (timer <= 0) {
+                    clearInterval(timerInterval);
+                    handleTimeout();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerDisplay = document.getElementById('timer-display');
+            timerDisplay.innerText = `${timer}s`;
+            if (timer <= 5) {
+                timerDisplay.classList.add('text-rose-500', 'animate-pulse');
+            } else {
+                timerDisplay.classList.remove('text-rose-500', 'animate-pulse');
+            }
+        }
+
+        function handleTimeout() {
+            if (isAnswered) return;
+            isAnswered = true;
+            streak = 0;
+            document.getElementById('streak-display').innerText = `x${streak}`;
+            playSound('wrong');
+
+            showFeedback(false, 'Tempo esgotado! Tente a próxima pergunta.');
+        }
+
+        function showFeedback(isCorrect, message) {
+            const feedbackBar = document.getElementById('feedback-bar');
+            feedbackBar.classList.remove('hidden', 'bg-emerald-500/20', 'border-emerald-500/40', 'text-emerald-300', 'bg-rose-500/20', 'border-rose-500/40', 'text-rose-300');
+            
+            if (isCorrect) {
+                feedbackBar.classList.add('bg-emerald-500/20', 'border', 'border-emerald-500/40', 'text-emerald-300');
+                feedbackBar.innerHTML = `<i class="fa-solid fa-circle-check mr-2"></i> ${message}`;
+            } else {
+                feedbackBar.classList.add('bg-rose-500/20', 'border', 'border-rose-500/40', 'text-rose-300');
+                feedbackBar.innerHTML = `<i class="fa-solid fa-circle-xmark mr-2"></i> ${message}`;
+            }
+        }
+
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function generateRandomIP() {
+            return `${getRandomInt(1, 223)}.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+        }
+
+        function generateQuestion() {
+            isAnswered = false;
+            resetTimer();
+            document.getElementById('feedback-bar').classList.add('hidden');
+            const qContainer = document.getElementById('question-container');
+            qContainer.innerHTML = '';
+
+            if (currentMode === 'classes') {
+                renderClassesQuestion(qContainer);
+            } else if (currentMode === 'binary') {
+                renderBinaryQuestion(qContainer);
+            } else if (currentMode === 'types') {
+                renderTypesQuestion(qContainer);
+            } else if (currentMode === 'subnetting') {
+                renderSubnettingQuestion(qContainer);
+            }
+        }
+
+        function renderClassesQuestion(container) {
+            // Generate IP and determine class
+            const firstOctet = getRandomInt(1, 239);
+            // Avoid loopback 127
+            const octet1 = (firstOctet === 127) ? 128 : firstOctet;
+            const ip = `${octet1}.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+            
+            let correctClass = '';
+            if (octet1 >= 1 && octet1 <= 126) correctClass = 'A';
+            else if (octet1 >= 128 && octet1 <= 191) correctClass = 'B';
+            else if (octet1 >= 192 && octet1 <= 223) correctClass = 'C';
+            else if (octet1 >= 224 && octet1 <= 239) correctClass = 'D';
+
+            currentQuestionData = { correctClass, octet1 };
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Qual é a classe deste IP?</span>
+                    <div class="text-3xl md:text-5xl font-extrabold font-mono text-cyan-400 mt-2 bg-slate-950 px-6 py-4 rounded-2xl border border-slate-800 shadow-inner inline-block tracking-wider">
+                        ${ip}
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full max-w-xl mt-4">
+                    ${['A', 'B', 'C', 'D'].map(cls => `
+                        <button onclick="checkClassAnswer('${cls}')" class="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-xl font-mono text-xl font-bold transition transform active:scale-95">
+                            Classe ${cls}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            document.getElementById('tip-text').innerText = 'Observe o primeiro octeto para determinar a classe de IP.';
+        }
+
+        function checkClassAnswer(selectedClass) {
+            if (isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const isCorrect = selectedClass === currentQuestionData.correctClass;
+            if (isCorrect) {
+                score += 100 + (streak * 10);
+                streak++;
+                playSound('correct');
+                showFeedback(true, `Exato! O primeiro octeto (${currentQuestionData.octet1}) pertence à Classe ${currentQuestionData.correctClass}.`);
+            } else {
+                streak = 0;
+                playSound('wrong');
+                showFeedback(false, `Incorreto! O octeto ${currentQuestionData.octet1} pertence à Classe ${currentQuestionData.correctClass}.`);
+            }
+            updateScoreDisplay();
+        }
+
+        let bitValues = [128, 64, 32, 16, 8, 4, 2, 1];
+        let currentBits = [0, 0, 0, 0, 0, 0, 0, 0];
+        let targetDecimal = 0;
+
+        function renderBinaryQuestion(container) {
+            targetDecimal = getRandomInt(1, 255);
+            currentBits = [0, 0, 0, 0, 0, 0, 0, 0];
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Alterne os bits para formar o decimal:</span>
+                    <div class="text-4xl md:text-6xl font-black font-mono text-emerald-400 mt-2 bg-slate-950 px-8 py-3 rounded-2xl border border-slate-800 inline-block">
+                        ${targetDecimal}
+                    </div>
+                </div>
+
+                <!-- Bit Toggles -->
+                <div class="w-full max-w-2xl my-4">
+                    <div class="grid grid-cols-8 gap-1.5 sm:gap-2">
+                        ${bitValues.map((val, idx) => `
+                            <div class="flex flex-col items-center">
+                                <span class="text-[10px] font-mono text-slate-400 mb-1">${val}</span>
+                                <button id="bit-btn-${idx}" onclick="toggleBit(${idx})" class="bit-btn w-full py-3 bg-slate-900 border border-slate-700 rounded-xl font-mono text-lg font-bold">
+                                    0
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Live Sum Calculator -->
+                <div class="flex items-center gap-3 bg-slate-950 px-5 py-2.5 rounded-xl border border-slate-800 font-mono text-sm mt-2">
+                    <span class="text-slate-400">Sua Soma:</span>
+                    <span id="current-sum-display" class="font-bold text-xl text-amber-400">0</span>
+                    <span class="text-slate-600">/ ${targetDecimal}</span>
+                </div>
+
+                <button onclick="checkBinaryAnswer()" class="mt-4 px-8 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg transition">
+                    Confirmar Octeto
+                </button>
+            `;
+            document.getElementById('tip-text').innerText = 'Clique nos botões de bits para alternar entre 0 e 1 até atingir o número alvo.';
+        }
+
+        function toggleBit(index) {
+            if (isAnswered) return;
+            playSound('toggle');
+            currentBits[index] = currentBits[index] === 0 ? 1 : 0;
+            const btn = document.getElementById(`bit-btn-${index}`);
+            if (currentBits[index] === 1) {
+                btn.innerText = '1';
+                btn.classList.add('active');
+            } else {
+                btn.innerText = '0';
+                btn.classList.remove('active');
+            }
+
+            // Calculate current sum
+            const sum = currentBits.reduce((acc, bit, idx) => acc + (bit * bitValues[idx]), 0);
+            document.getElementById('current-sum-display').innerText = sum;
+        }
+
+        function checkBinaryAnswer() {
+            if (isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const sum = currentBits.reduce((acc, bit, idx) => acc + (bit * bitValues[idx]), 0);
+            const binaryString = currentBits.join('');
+
+            if (sum === targetDecimal) {
+                score += 120 + (streak * 10);
+                streak++;
+                playSound('correct');
+                showFeedback(true, `Perfeito! O decimal ${targetDecimal} equivale a ${binaryString} em binário.`);
+            } else {
+                streak = 0;
+                playSound('wrong');
+                showFeedback(false, `Incorreto. Você montou ${sum}, mas o valor correto para ${targetDecimal} é ${targetDecimal.toString(2).padStart(8, '0')}.`);
+            }
+            updateScoreDisplay();
+        }
+
+        function renderTypesQuestion(container) {
+            const isPrivateTarget = Math.random() < 0.5;
+            let ip = '';
+
+            if (isPrivateTarget) {
+                const choice = getRandomInt(1, 3);
+                if (choice === 1) { // 10.0.0.0/8
+                    ip = `10.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                } else if (choice === 2) { // 172.16.0.0/12
+                    ip = `172.${getRandomInt(16, 31)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                } else { // 192.168.0.0/16
+                    ip = `192.168.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                }
+            } else { // Public IP
+                // Avoid private ranges
+                let oct1 = getRandomInt(1, 223);
+                while (oct1 === 10 || oct1 === 127) {
+                    oct1 = getRandomInt(1, 223);
+                }
+                if (oct1 === 172) {
+                    ip = `172.${getRandomInt(32, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                } else if (oct1 === 192) {
+                    ip = `192.${getRandomInt(0, 167)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                } else {
+                    ip = `${oct1}.${getRandomInt(0, 255)}.${getRandomInt(0, 255)}.${getRandomInt(1, 254)}`;
+                }
+            }
+
+            currentQuestionData = { ip, isPrivate: isPrivateTarget };
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Este endereço IP é Público ou Privado?</span>
+                    <div class="text-3xl md:text-5xl font-extrabold font-mono text-purple-400 mt-2 bg-slate-950 px-6 py-4 rounded-2xl border border-slate-800 shadow-inner inline-block tracking-wider">
+                        ${ip}
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mt-4">
+                    <button onclick="checkTypeAnswer(true)" class="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-purple-500 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-lock text-purple-400"></i> Endereço Privado
+                    </button>
+                    <button onclick="checkTypeAnswer(false)" class="p-4 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-globe text-cyan-400"></i> Endereço Público
+                    </button>
+                </div>
+            `;
+            document.getElementById('tip-text').innerText = 'IPs Privados seguem os intervalos da RFC 1918 (10.x.x.x, 172.16-31.x.x, 192.168.x.x).';
+        }
+
+        function checkTypeAnswer(selectedIsPrivate) {
+            if (isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const isCorrect = selectedIsPrivate === currentQuestionData.isPrivate;
+            if (isCorrect) {
+                score += 100 + (streak * 10);
+                streak++;
+                playSound('correct');
+                showFeedback(true, `Correto! O IP ${currentQuestionData.ip} é um endereço ${currentQuestionData.isPrivate ? 'PRIVADO (RFC 1918)' : 'PÚBLICO'}.`);
+            } else {
+                streak = 0;
+                playSound('wrong');
+                showFeedback(false, `Incorreto! O IP ${currentQuestionData.ip} na verdade é ${currentQuestionData.isPrivate ? 'PRIVADO' : 'PÚBLICO'}.`);
+            }
+            updateScoreDisplay();
+        }
+
+        function renderSubnettingQuestion(container) {
+            const cidrList = [
+                { cidr: 24, mask: '255.255.255.0', hosts: 254 },
+                { cidr: 25, mask: '255.255.255.128', hosts: 126 },
+                { cidr: 26, mask: '255.255.255.192', hosts: 62 },
+                { cidr: 27, mask: '255.255.255.224', hosts: 30 },
+                { cidr: 28, mask: '255.255.255.240', hosts: 14 },
+                { cidr: 29, mask: '255.255.255.248', hosts: 6 },
+                { cidr: 30, mask: '255.255.255.252', hosts: 2 }
+            ];
+
+            const selected = cidrList[getRandomInt(0, cidrList.length - 1)];
+            const questionType = Math.random() < 0.5 ? 'mask' : 'hosts';
+
+            let questionText = '';
+            let options = [];
+            let correctAnswer = '';
+
+            if (questionType === 'mask') {
+                questionText = `Qual é a Máscara de Sub-rede decimal para a notação /${selected.cidr}?`;
+                correctAnswer = selected.mask;
+                
+                // Shuffle unique masks
+                options = Array.from(new Set([
+                    selected.mask,
+                    '255.255.255.128',
+                    '255.255.255.192',
+                    '255.255.255.224',
+                    '255.255.255.240'
+                ])).slice(0, 4);
+            } else {
+                questionText = `Quantos hosts ÚTEIS existem em uma sub-rede /${selected.cidr}?`;
+                correctAnswer = `${selected.hosts} hosts`;
+                
+                options = [
+                    `${selected.hosts} hosts`,
+                    `${selected.hosts + 2} hosts`,
+                    `${Math.max(2, selected.hosts - 6)} hosts`,
+                    `${selected.hosts * 2} hosts`
+                ];
+            }
+
+            // Shuffle options
+            options.sort(() => Math.random() - 0.5);
+
+            currentQuestionData = { correctAnswer };
+
+            container.innerHTML = `
+                <div class="mb-4">
+                    <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">${questionText}</span>
+                    <div class="text-4xl font-extrabold font-mono text-amber-400 mt-2 bg-slate-950 px-6 py-4 rounded-2xl border border-slate-800 shadow-inner inline-block">
+                        /${selected.cidr}
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg mt-4">
+                    ${options.map(opt => `
+                        <button onclick="checkSubnetAnswer('${opt}')" class="p-3.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500 rounded-xl font-mono text-base font-bold transition">
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            document.getElementById('tip-text').innerText = 'Dica: Hosts úteis = 2^(32 - CIDR) - 2 (descontando Rede e Broadcast).';
+        }
+
+        function checkSubnetAnswer(selectedAnswer) {
+            if (isAnswered) return;
+            isAnswered = true;
+            clearInterval(timerInterval);
+
+            const isCorrect = selectedAnswer === currentQuestionData.correctAnswer;
+            if (isCorrect) {
+                score += 150 + (streak * 15);
+                streak++;
+                playSound('correct');
+                showFeedback(true, `Excelente! A resposta correta é ${currentQuestionData.correctAnswer}.`);
+            } else {
+                streak = 0;
+                playSound('wrong');
+                showFeedback(false, `Incorreto! A resposta correta é ${currentQuestionData.correctAnswer}.`);
+            }
+            updateScoreDisplay();
+        }
+
+        function updateScoreDisplay() {
+            document.getElementById('score-display').innerText = score;
+            document.getElementById('streak-display').innerText = `x${streak}`;
+        }
+
+        // Initialize First Game Mode on Load
+        window.onload = function() {
+            switchMode('classes');
+        };
+    </script>
+</body>
+</html>
